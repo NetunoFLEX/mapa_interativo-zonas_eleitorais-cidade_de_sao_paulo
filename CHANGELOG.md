@@ -12,6 +12,7 @@ Formato inspirado em [Keep a Changelog](https://keepachangelog.com/pt-BR/).
 - Preservação da ordem personalizada dos blocos na exportação/PDF.
 - Manutenção da ordem crescente das zonas como padrão inicial.
 - Ícone visual de arraste nos títulos das zonas.
+- Área de arraste restrita ao título de cada zona, evitando conflito com campos editáveis.
 - Exclusão de grupos de zonas selecionadas com botão `×`.
 - Confirmação antes de excluir um grupo de zonas.
 - Zoom máximo do mapa ampliado para 400%.
@@ -34,12 +35,14 @@ Formato inspirado em [Keep a Changelog](https://keepachangelog.com/pt-BR/).
 - Edição de seleções agora preserva a ordem customizada sempre que possível.
 - Novas zonas adicionadas durante edição entram ao final da seleção, mantendo a ordenação crescente entre elas.
 - Visual dos blocos exportados refinado para leitura mais limpa.
+- Interação dos blocos de zona refinada: a reordenação agora acontece apenas pelo título da zona.
 
 ### Corrigido
 
 - Corrigido o salto de página que fazia os blocos das zonas começarem apenas na página seguinte ao mapa.
 - Corrigido comportamento de exportação para preservar melhor a cor das seleções no mapa.
 - Corrigida a diferença visual do título de observações em relação aos demais títulos de blocos.
+- Corrigido conflito em que selecionar texto nos campos editáveis podia iniciar o arraste do bloco inteiro.
 
 ## [v1] - Versão anterior
 
