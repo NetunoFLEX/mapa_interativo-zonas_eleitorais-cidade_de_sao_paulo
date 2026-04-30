@@ -278,6 +278,34 @@
       font-size: 14px;
     }
 
+    .selection-title .selection-name {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .delete-selection {
+      width: 26px;
+      height: 26px;
+      border: 1px solid #c9c9c9;
+      background: #fff;
+      border-radius: 999px;
+      color: #9f1239;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      font-size: 16px;
+      line-height: 1;
+      font-weight: 950;
+      cursor: pointer;
+      flex: 0 0 auto;
+    }
+
+    .delete-selection:hover {
+      background: #ffe4e6;
+      border-color: #fb7185;
+    }
+
     .small-color {
       width: 16px;
       height: 16px;
@@ -291,6 +319,48 @@
       grid-template-columns: 34px minmax(0, 1fr);
       border-bottom: 1px solid #ececec;
       min-height: 112px;
+      cursor: grab;
+    }
+
+    .zone-info.dragging {
+      opacity: .48;
+      outline: 2px dashed #111;
+      outline-offset: -4px;
+    }
+
+    .zone-info.drag-over {
+      box-shadow: inset 0 3px 0 #111;
+    }
+
+    .zone-info input,
+    .zone-info textarea {
+      cursor: text;
+    }
+
+    .drag-hint {
+      margin-top: -4px;
+      margin-bottom: 10px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    .drag-grip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      margin-right: 6px;
+      border: 1px solid #cfcfcf;
+      border-radius: 5px;
+      background: #f7f7f7;
+      color: #555;
+      font-size: 11px;
+      line-height: 1;
+      cursor: grab;
+      user-select: none;
+      vertical-align: 1px;
     }
 
     .zone-info:last-child {
@@ -408,7 +478,7 @@
 
       <div class="range-control map-scale-control">
         <strong>Zoom</strong>
-        <input type="range" id="mapScale" min="0.65" max="3.00" step="0.05" value="1">
+        <input type="range" id="mapScale" min="0.65" max="4.00" step="0.01" value="1">
         <span id="mapScaleValue">100%</span>
       </div>
 
@@ -907,8 +977,8 @@
         </p>
 
         <div class="credit-box">
-          <strong>Mapa Interativo das Zonas Eleitorais da Cidade de São Paulo</strong><br>
-          Créditos: netunoflex &amp; Sailoratlantis
+          <strong>Mapa-base:</strong> Sailoratlantis, Avrelianvs Magnvs e demais colaboradores do Wikimedia Commons, licenciado sob CC BY-SA 4.0.<br>
+          <strong>Adaptação interativa:</strong> netunoflex
         </div>
 
         <div class="field report-title-field">
@@ -962,6 +1032,7 @@
 
       <section class="card">
         <h2>Seleções confirmadas</h2>
+        <p class="drag-hint">Os blocos das zonas ficam em ordem crescente por padrão. Arraste uma zona para mudar a ordem no painel e na exportação.</p>
         <div id="confirmedSelections">
           <p class="hint">Nenhuma seleção confirmada ainda.</p>
         </div>
@@ -1540,7 +1611,17 @@
     function confirmSelection() {
       const title = document.getElementById("selectionTitle").value.trim();
       const color = document.getElementById("selectionColor").value || "#ffcc00";
-      const zones = Array.from(currentSelected).sort((a, b) => Number(a) - Number(b));
+      let zones = Array.from(currentSelected).sort((a, b) => Number(a) - Number(b));
+
+      if (editingSelectionId) {
+        const existing = selections.find(s => s.id === editingSelectionId);
+        if (existing && Array.isArray(existing.zones)) {
+          const selectedSet = new Set(zones);
+          const keptInCurrentOrder = existing.zones.filter(number => selectedSet.has(number));
+          const added = zones.filter(number => !keptInCurrentOrder.includes(number));
+          zones = keptInCurrentOrder.concat(added);
+        }
+      }
 
       if (!title) {
         alert("Coloque um título para a seleção. Sem nome, vira bagunça premium.");
@@ -1600,7 +1681,7 @@
 
       document.getElementById("selectionTitle").value = sel.title;
       document.getElementById("selectionColor").value = sel.color;
-      currentSelected = new Set(sel.zones);
+      currentSelected = new Set(sel.zones || []);
 
       renderCurrentSelected();
       updateCheckboxes();
@@ -1616,6 +1697,105 @@
 
       sel.info[zoneNumber][key] = value;
       saveSelections();
+    }
+
+    function deleteSelection(selectionId) {
+      const sel = selections.find(s => s.id === selectionId);
+      if (!sel) return;
+
+      const ok = confirm('Excluir o grupo "' + sel.title + '"? Esta ação remove a seleção e os dados preenchidos nela.');
+      if (!ok) return;
+
+      selections = selections.filter(s => s.id !== selectionId);
+
+      if (editingSelectionId === selectionId) {
+        editingSelectionId = "";
+        currentSelected.clear();
+        document.getElementById("selectionTitle").value = "";
+        document.getElementById("editSelectionSelect").value = "";
+      }
+
+      saveSelections();
+      renderSelectionSelect();
+      renderCurrentSelected();
+      renderConfirmedSelections();
+      updateCheckboxes();
+      refreshZoneColors();
+    }
+
+    function isFormField(target) {
+      return !!target.closest("input, textarea, select, button");
+    }
+
+    function reorderZoneInSelection(selectionId, draggedZone, targetZone) {
+      if (!selectionId || !draggedZone || !targetZone || draggedZone === targetZone) return;
+
+      const sel = selections.find(s => s.id === selectionId);
+      if (!sel || !Array.isArray(sel.zones)) return;
+
+      const next = sel.zones.filter(number => number !== draggedZone);
+      const targetIndex = next.indexOf(targetZone);
+
+      if (targetIndex < 0) return;
+
+      next.splice(targetIndex, 0, draggedZone);
+      sel.zones = next;
+
+      saveSelections();
+      renderConfirmedSelections();
+    }
+
+    function attachZoneDragHandlers(item, selectionId, zoneNumber) {
+      item.setAttribute("draggable", "true");
+      item.dataset.selectionId = selectionId;
+      item.dataset.zoneNumber = zoneNumber;
+
+      item.addEventListener("dragstart", event => {
+        if (isFormField(event.target)) {
+          event.preventDefault();
+          return;
+        }
+
+        item.classList.add("dragging");
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("text/plain", JSON.stringify({
+          selectionId,
+          zoneNumber
+        }));
+      });
+
+      item.addEventListener("dragend", () => {
+        document.querySelectorAll(".zone-info.dragging, .zone-info.drag-over").forEach(el => {
+          el.classList.remove("dragging", "drag-over");
+        });
+      });
+
+      item.addEventListener("dragover", event => {
+        event.preventDefault();
+        item.classList.add("drag-over");
+        event.dataTransfer.dropEffect = "move";
+      });
+
+      item.addEventListener("dragleave", () => {
+        item.classList.remove("drag-over");
+      });
+
+      item.addEventListener("drop", event => {
+        event.preventDefault();
+        item.classList.remove("drag-over");
+
+        let payload = null;
+
+        try {
+          payload = JSON.parse(event.dataTransfer.getData("text/plain") || "{}");
+        } catch (e) {
+          payload = null;
+        }
+
+        if (!payload || payload.selectionId !== selectionId) return;
+
+        reorderZoneInSelection(selectionId, payload.zoneNumber, zoneNumber);
+      });
     }
 
     function renderConfirmedSelections() {
@@ -1634,15 +1814,17 @@
 
         const title = document.createElement("div");
         title.className = "selection-title";
-        title.innerHTML = '<span class="small-color" style="background:' + sel.color + '"></span><span>' + escapeHtml(sel.title) + '</span>';
+        title.innerHTML = '<span class="small-color" style="background:' + sel.color + '"></span><span class="selection-name">' + escapeHtml(sel.title) + '</span><button type="button" class="delete-selection" title="Excluir grupo" aria-label="Excluir grupo">×</button>';
+        title.querySelector(".delete-selection").addEventListener("click", () => deleteSelection(sel.id));
         block.appendChild(title);
 
-        sel.zones.forEach(number => {
+        (sel.zones || []).forEach(number => {
           const z = zoneInfo[number] || {name: ""};
           const info = (sel.info && sel.info[number]) ? sel.info[number] : {};
 
           const item = document.createElement("div");
           item.className = "zone-info";
+          attachZoneDragHandlers(item, sel.id, number);
 
           const colorBar = document.createElement("div");
           colorBar.className = "zone-color-bar";
@@ -1651,10 +1833,10 @@
           const form = document.createElement("div");
           form.className = "zone-form";
           form.innerHTML = `
-            <h3>${number}ª Zona Eleitoral - ${escapeHtml(z.name)}</h3>
+            <h3><span class="drag-grip" title="Arraste para reordenar">☰</span>${number}ª Zona Eleitoral - ${escapeHtml(z.name)}</h3>
             <div class="info-line editable-label-line">
               <input type="text" value="${escapeAttr(info.votosCandidatoLabel || "VOTOS [CANDIDATO]:")}" data-k="votosCandidatoLabel" class="label-input">
-              <input type="text" value="${escapeAttr(info.votosCandidato || "")}" data-k="votosCandidato" placeholder="[VALOR]">
+              <input type="text" value="${escapeAttr(info.votosCandidato || "")}" data-k="votosCandidato">
             </div>
             <div class="info-line editable-label-line">
               <input type="text" value="${escapeAttr(info.eleitoresLabel || "ELEITORES:")}" data-k="eleitoresLabel" class="label-input">
@@ -1883,12 +2065,26 @@
             <div class="zone-row">
               <div class="color-slab" style="background:${sel.color}"></div>
               <div class="zone-copy">
-                <h3>${number}ª Zona Eleitoral - ${escapeHtml(z.name)}</h3>
-                <p><strong>${escapeHtml(info.votosCandidatoLabel || "VOTOS [CANDIDATO]:")}</strong> ${escapeHtml(info.votosCandidato || "________________")}</p>
-                <p><strong>${escapeHtml(info.eleitoresLabel || "ELEITORES:")}</strong> ${escapeHtml(info.eleitores || "________________")}</p>
-                <p><strong>${escapeHtml(info.votosValidosLabel || "ESTIMATIVA DE VOTOS VÁLIDOS:")}</strong> ${escapeHtml(info.votosValidos || "________________")}</p>
-                <p><strong>${escapeHtml(info.eleitoresAlvoLabel || "ELEITORES ALVO:")}</strong> ${escapeHtml(info.eleitoresAlvo || "________________")}</p>
-                ${info.notas ? `<p class="notes"><strong>INFORMAÇÕES:</strong> ${escapeHtml(info.notas)}</p>` : ""}
+                <h3><span class="drag-grip" title="Arraste para reordenar">☰</span>${number}ª Zona Eleitoral - ${escapeHtml(z.name)}</h3>
+                <div class="metric-grid">
+                  <div class="metric-card">
+                    <div class="metric-label">${escapeHtml(info.votosCandidatoLabel || "VOTOS [CANDIDATO]:")}</div>
+                    <div class="metric-value">${escapeHtml(info.votosCandidato || "________________")}</div>
+                  </div>
+                  <div class="metric-card">
+                    <div class="metric-label">${escapeHtml(info.eleitoresLabel || "ELEITORES:")}</div>
+                    <div class="metric-value">${escapeHtml(info.eleitores || "________________")}</div>
+                  </div>
+                  <div class="metric-card">
+                    <div class="metric-label">${escapeHtml(info.votosValidosLabel || "ESTIMATIVA DE VOTOS VÁLIDOS:")}</div>
+                    <div class="metric-value">${escapeHtml(info.votosValidos || "________________")}</div>
+                  </div>
+                  <div class="metric-card">
+                    <div class="metric-label">${escapeHtml(info.eleitoresAlvoLabel || "ELEITORES ALVO:")}</div>
+                    <div class="metric-value">${escapeHtml(info.eleitoresAlvo || "________________")}</div>
+                  </div>
+                </div>
+                ${info.notas ? `<div class="notes-card"><strong>OBSERVAÇÕES:</strong><br>${escapeHtml(info.notas)}</div>` : ""}
               </div>
             </div>
           `;
@@ -1959,14 +2155,15 @@
 
     .map-print {
       width: 100%;
-      height: 128mm;
+      height: 98mm;
       border: 1px solid #cfcfcf;
       display: flex;
       align-items: center;
       justify-content: center;
       overflow: hidden;
-      margin-bottom: 5mm;
+      margin-bottom: 3mm;
       page-break-inside: avoid;
+      break-inside: avoid;
       background: #fff;
     }
 
@@ -1984,10 +2181,12 @@
     }
 
     .selection-section {
-      page-break-inside: avoid;
-      break-inside: avoid;
+      page-break-inside: auto;
+      break-inside: auto;
       margin-bottom: 4mm;
-      border: 1px solid #cfcfcf;
+      border: 0;
+      border-radius: 4px;
+      overflow: visible;
     }
 
     .selection-head {
@@ -1995,8 +2194,10 @@
       align-items: center;
       gap: 6px;
       padding: 5px 7px;
-      border-bottom: 1px solid #cfcfcf;
+      border: 1px solid #cfcfcf;
       background: #f3f3f3;
+      break-after: avoid;
+      page-break-after: avoid;
     }
 
     .selection-color {
@@ -2016,16 +2217,18 @@
     }
 
     .zone-grid {
-      display: grid;
-      grid-template-columns: 1fr;
+      display: block;
+      border-left: 1px solid #cfcfcf;
+      border-right: 1px solid #cfcfcf;
     }
 
     .zone-row {
-      min-height: 25mm;
+      min-height: 33mm;
       display: grid;
-      grid-template-columns: 12mm minmax(0, 1fr);
+      grid-template-columns: 10mm minmax(0, 1fr);
       border-bottom: 1px solid #e4e4e4;
       break-inside: avoid;
+      page-break-inside: avoid;
     }
 
     .zone-row:last-child {
@@ -2035,30 +2238,74 @@
     .color-slab {
       width: 100%;
       height: 100%;
-      min-height: 25mm;
+      min-height: 33mm;
     }
 
     .zone-copy {
       padding: 5px 7px;
+      font-family: Arial, Helvetica, sans-serif;
     }
 
     .zone-copy h3 {
-      margin: 0 0 3px 0;
+      margin: 0 0 4px 0;
       font-size: 10.5px;
       line-height: 1.15;
       font-weight: 950;
       text-transform: uppercase;
+      font-family: Arial, Helvetica, sans-serif;
     }
 
-    .zone-copy p {
-      margin: 2px 0;
-      font-size: 9px;
-      line-height: 1.16;
+    .metric-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3px;
     }
 
-    .zone-copy .notes {
+    .metric-card {
+      border: 1px solid #d7d7d7;
+      border-radius: 4px;
+      padding: 3px 4px;
+      background: #fafafa;
+      min-height: 9.5mm;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .metric-label {
+      font-size: 7.4px;
+      line-height: 1.1;
+      font-weight: 950;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .metric-value {
+      font-size: 9.3px;
+      line-height: 1.15;
+      font-weight: 700;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .notes-card {
       margin-top: 3px;
-      font-size: 8.8px;
+      border: 1px solid #d7d7d7;
+      border-radius: 4px;
+      padding: 3px 4px;
+      background: #fff;
+      font-size: 9.3px;
+      line-height: 1.15;
+      font-family: Arial, Helvetica, sans-serif;
+      font-weight: 400;
+    }
+
+    .notes-card strong {
+      display: block;
+      font-size: 7.4px;
+      line-height: 1.1;
+      font-weight: 950;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+      font-family: Arial, Helvetica, sans-serif;
     }
 
     .empty-state {
@@ -2117,7 +2364,18 @@
       }
 
       .selection-section {
+        break-inside: auto !important;
+        page-break-inside: auto !important;
+        overflow: visible !important;
+      }
+
+      .zone-grid {
+        display: block !important;
+      }
+
+      .zone-row {
         break-inside: avoid;
+        page-break-inside: avoid;
       }
     }
   </style>
@@ -2130,7 +2388,8 @@
   <main class="report">
     <h1 class="report-title">${escapeHtml(reportTitle)}</h1>
     <div class="meta">
-      Gerado em ${generatedAt}. O mapa preserva o zoom, o eixo X e o eixo Y ativos no momento da exportação.
+      Gerado em ${generatedAt}. O mapa preserva o zoom, o eixo X e o eixo Y ativos no momento da exportação.<br>
+      Mapa-base: Sailoratlantis, Avrelianvs Magnvs e demais colaboradores do Wikimedia Commons, licenciado sob CC BY-SA 4.0. Adaptação interativa: netunoflex.
     </div>
     <section class="map-print">${svgMarkup}</section>
     ${confirmed.length ? selectionSections : emptyState}
