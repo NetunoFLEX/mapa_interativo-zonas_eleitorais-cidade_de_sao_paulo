@@ -319,7 +319,7 @@
       grid-template-columns: 34px minmax(0, 1fr);
       border-bottom: 1px solid #ececec;
       min-height: 112px;
-      cursor: grab;
+      cursor: default;
     }
 
     .zone-info.dragging {
@@ -361,6 +361,19 @@
       cursor: grab;
       user-select: none;
       vertical-align: 1px;
+    }
+
+    .zone-drag-title {
+      cursor: grab;
+      user-select: none;
+      display: inline-flex;
+      align-items: center;
+      max-width: 100%;
+    }
+
+    .zone-drag-title:active,
+    .drag-grip:active {
+      cursor: grabbing;
     }
 
     .zone-info:last-child {
@@ -1032,7 +1045,7 @@
 
       <section class="card">
         <h2>Seleções confirmadas</h2>
-        <p class="drag-hint">Os blocos das zonas ficam em ordem crescente por padrão. Arraste uma zona para mudar a ordem no painel e na exportação.</p>
+        <p class="drag-hint">Os blocos das zonas ficam em ordem crescente por padrão. Arraste pelo título da zona para mudar a ordem no painel e na exportação.</p>
         <div id="confirmedSelections">
           <p class="hint">Nenhuma seleção confirmada ainda.</p>
         </div>
@@ -1746,29 +1759,8 @@
     }
 
     function attachZoneDragHandlers(item, selectionId, zoneNumber) {
-      item.setAttribute("draggable", "true");
       item.dataset.selectionId = selectionId;
       item.dataset.zoneNumber = zoneNumber;
-
-      item.addEventListener("dragstart", event => {
-        if (isFormField(event.target)) {
-          event.preventDefault();
-          return;
-        }
-
-        item.classList.add("dragging");
-        event.dataTransfer.effectAllowed = "move";
-        event.dataTransfer.setData("text/plain", JSON.stringify({
-          selectionId,
-          zoneNumber
-        }));
-      });
-
-      item.addEventListener("dragend", () => {
-        document.querySelectorAll(".zone-info.dragging, .zone-info.drag-over").forEach(el => {
-          el.classList.remove("dragging", "drag-over");
-        });
-      });
 
       item.addEventListener("dragover", event => {
         event.preventDefault();
@@ -1795,6 +1787,25 @@
         if (!payload || payload.selectionId !== selectionId) return;
 
         reorderZoneInSelection(selectionId, payload.zoneNumber, zoneNumber);
+      });
+    }
+
+    function attachZoneTitleDragHandlers(titleEl, item, selectionId, zoneNumber) {
+      titleEl.setAttribute("draggable", "true");
+
+      titleEl.addEventListener("dragstart", event => {
+        item.classList.add("dragging");
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("text/plain", JSON.stringify({
+          selectionId,
+          zoneNumber
+        }));
+      });
+
+      titleEl.addEventListener("dragend", () => {
+        document.querySelectorAll(".zone-info.dragging, .zone-info.drag-over").forEach(el => {
+          el.classList.remove("dragging", "drag-over");
+        });
       });
     }
 
@@ -1833,7 +1844,7 @@
           const form = document.createElement("div");
           form.className = "zone-form";
           form.innerHTML = `
-            <h3><span class="drag-grip" title="Arraste para reordenar">☰</span>${number}ª Zona Eleitoral - ${escapeHtml(z.name)}</h3>
+            <h3><span class="zone-drag-title" title="Arraste pelo título para reordenar"><span class="drag-grip">☰</span>${number}ª Zona Eleitoral - ${escapeHtml(z.name)}</span></h3>
             <div class="info-line editable-label-line">
               <input type="text" value="${escapeAttr(info.votosCandidatoLabel || "VOTOS [CANDIDATO]:")}" data-k="votosCandidatoLabel" class="label-input">
               <input type="text" value="${escapeAttr(info.votosCandidato || "")}" data-k="votosCandidato">
@@ -1854,6 +1865,11 @@
               <textarea placeholder="Informações adicionais..." data-k="notas">${escapeHtml(info.notas || "")}</textarea>
             </div>
           `;
+
+          const dragTitle = form.querySelector(".zone-drag-title");
+          if (dragTitle) {
+            attachZoneTitleDragHandlers(dragTitle, item, sel.id, number);
+          }
 
           form.querySelectorAll("input, textarea").forEach(input => {
             input.addEventListener("input", () => {
@@ -2065,7 +2081,7 @@
             <div class="zone-row">
               <div class="color-slab" style="background:${sel.color}"></div>
               <div class="zone-copy">
-                <h3><span class="drag-grip" title="Arraste para reordenar">☰</span>${number}ª Zona Eleitoral - ${escapeHtml(z.name)}</h3>
+                <h3><span class="zone-drag-title" title="Arraste pelo título para reordenar"><span class="drag-grip">☰</span>${number}ª Zona Eleitoral - ${escapeHtml(z.name)}</span></h3>
                 <div class="metric-grid">
                   <div class="metric-card">
                     <div class="metric-label">${escapeHtml(info.votosCandidatoLabel || "VOTOS [CANDIDATO]:")}</div>
