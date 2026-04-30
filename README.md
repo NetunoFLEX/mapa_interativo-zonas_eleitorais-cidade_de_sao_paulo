@@ -1,4 +1,4 @@
-# Mapa Interativo das Zonas Eleitorais da Cidade de São Paulo
+# Mapa Interativo das Zonas Eleitorais da Cidade de São Paulo 
 
 Aplicação HTML standalone para visualizar, selecionar, organizar e exportar análises territoriais das zonas eleitorais da cidade de São Paulo.
 
@@ -51,7 +51,7 @@ No cabeçalho, use os controles:
 - **Y**: move o enquadramento para cima ou baixo.
 - **Resetar visão**: volta o enquadramento ao padrão.
 
-A exportação usa o enquadramento atual do mapa. Então ajuste o zoom e a posição antes de gerar o relatório.
+A exportação usa o enquadramento atual do mapa. Então, antes de gerar o relatório, ajuste o zoom e a posição.
 
 ### 3. Criar uma seleção de zonas
 
