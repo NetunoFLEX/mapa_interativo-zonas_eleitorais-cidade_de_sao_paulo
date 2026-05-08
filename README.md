@@ -1,30 +1,48 @@
-# Mapa Interativo das Zonas Eleitorais da Cidade de São Paulo 
+# Mapa Interativo das Zonas Eleitorais da Cidade de São Paulo
 
 Aplicação HTML standalone para visualizar, selecionar, organizar e exportar análises territoriais das zonas eleitorais da cidade de São Paulo.
 
-O projeto foi pensado para ser simples de compartilhar: basta abrir o arquivo `.html` no navegador. Sem instalação, sem servidor, sem backend, sem dependências. O mapa, os controles e a exportação ficam dentro de um único arquivo.
+O projeto foi pensado para ser simples de compartilhar: basta baixar o arquivo `.html` e abrir no navegador. Não requer instalação, servidor, backend ou dependências. O mapa, os controles, as seleções, os campos editáveis e a exportação ficam dentro de um único arquivo.
+
+## Versão atual
+
+**v2.1.0 - Organização avançada, campos dinâmicos e progresso importável**
+
+Esta versão mantém o foco exclusivo no mapa das zonas eleitorais da cidade de São Paulo e adiciona recursos para organizar melhor as seleções, personalizar as informações de cada zona e salvar/restaurar o progresso do trabalho.
 
 ## Principais recursos
 
-- Mapa SVG interativo das zonas eleitorais de São Paulo.
+- Mapa SVG interativo das zonas eleitorais da cidade de São Paulo.
 - Seleção de zonas por grupo com título obrigatório.
 - Escolha de cor para cada grupo selecionado.
 - Destaque visual das zonas selecionadas no mapa.
 - Zoom vetorial do mapa, sem perda de qualidade.
+- Zoom máximo ampliado para 400%.
 - Controle de deslocamento nos eixos X e Y.
 - Redimensionamento dos rótulos das zonas.
+- Título editável do relatório/PDF.
 - Campos editáveis por zona:
   - votos do candidato;
   - eleitores;
   - estimativa de votos válidos;
   - eleitores alvo;
   - observações.
-- Reordenação manual dos blocos das zonas por arrastar e soltar.
+- Títulos dos campos editáveis.
+- Botão `+` para adicionar novos campos de texto em cada box de zona.
+- Botão `×` para remover/ocultar campos padrão ou personalizados das boxes.
+- Reordenação manual dos blocos de seleção por arrastar e soltar.
+- Reordenação manual das boxes de zonas dentro de cada seleção.
+- Arraste restrito às áreas de título, evitando conflito com campos editáveis.
+- Painel de ordenação opcional para ordenar blocos ou boxes automaticamente.
+- Ordenação por número da zona, título da seleção ou valor de campos preenchidos, como “votação” ou “eleitores”.
 - Exclusão de grupos de zonas com confirmação.
-- Título editável do relatório/PDF.
 - Exportação para impressão/PDF em A4 retrato.
 - Exportação preservando o enquadramento atual do mapa: zoom, X e Y.
+- Exportação dos campos personalizados no relatório.
+- Ocultação de campos removidos também no relatório.
 - Salvamento local automático via `localStorage`.
+- Botão **Salvar progresso** para exportar o estado atual em `.json`.
+- Botão **Importar progresso** para restaurar seleções, campos, ordem manual e enquadramento visual.
 
 ## Como usar
 
@@ -32,7 +50,7 @@ O projeto foi pensado para ser simples de compartilhar: basta abrir o arquivo `.
 
 Baixe o arquivo HTML do projeto e abra no navegador.
 
-Recomendado:
+Navegadores recomendados:
 
 - Google Chrome
 - Microsoft Edge
@@ -48,10 +66,10 @@ No cabeçalho, use os controles:
 - **Rótulos**: altera o tamanho dos números das zonas.
 - **Zoom**: aproxima ou afasta o mapa.
 - **X**: move o enquadramento para esquerda ou direita.
-- **Y**: move o enquadramento para cima ou baixo.
+- **Y**: move o enquadramento para cima ou para baixo.
 - **Resetar visão**: volta o enquadramento ao padrão.
 
-A exportação usa o enquadramento atual do mapa. Então, antes de gerar o relatório, ajuste o zoom e a posição.
+A exportação usa o enquadramento atual do mapa. Antes de gerar o relatório, ajuste o zoom e a posição. Parece detalhe, mas é exatamente onde relatório bonito vira print torto.
 
 ### 3. Criar uma seleção de zonas
 
@@ -77,19 +95,54 @@ Em cada zona selecionada, preencha ou edite os campos:
 
 Os títulos dos campos também são editáveis. Isso permite trocar, por exemplo, `VOTOS [CANDIDATO]:` por `VOTOS DRA. SANDRA TADEU - 2024:`.
 
-### 5. Reordenar zonas
+### 5. Adicionar ou remover campos nas boxes
 
-Nas seleções confirmadas, os blocos das zonas aparecem em ordem crescente por padrão.
+Cada box de zona possui controles próprios:
 
-Para alterar a ordem:
+- use o botão `+` para adicionar uma nova caixa de texto;
+- edite o título do novo campo;
+- preencha o valor desejado;
+- use o botão `×` para remover campos padrão ou personalizados.
 
-1. Clique e segure no bloco da zona ou no ícone de arraste.
-2. Arraste para a posição desejada.
+Campos removidos deixam de aparecer no painel e também não são exibidos no relatório exportado.
+
+### 6. Reordenar blocos e zonas manualmente
+
+Nas seleções confirmadas, a ordem pode ser ajustada manualmente.
+
+Para reordenar blocos de seleção:
+
+1. Clique e segure no título do bloco de seleção.
+2. Arraste o bloco inteiro para a posição desejada.
 3. Solte.
 
-A ordem personalizada é salva e também será usada na exportação/PDF.
+Para reordenar zonas dentro de uma seleção:
 
-### 6. Editar ou excluir uma seleção
+1. Clique e segure no título da zona ou no ícone de arraste.
+2. Arraste a box para a posição desejada.
+3. Solte.
+
+A ordem personalizada é preservada no painel, no salvamento de progresso e na exportação/PDF.
+
+### 7. Usar o painel de ordenação
+
+Além da ordenação manual, a aplicação possui um painel de ordenação opcional.
+
+Ele permite ordenar:
+
+- blocos de seleção;
+- boxes de zonas dentro das seleções.
+
+Critérios disponíveis:
+
+- título da seleção;
+- número da zona;
+- valor de uma caixa de texto, como “votação”, “eleitores”, “votos” ou qualquer campo personalizado;
+- ordem crescente ou decrescente.
+
+A ordenação automática é complementar. Para narrativa estratégica, a ordem manual geralmente é melhor. Algoritmo nenhum entende prioridade política sem contexto, no máximo finge com convicção.
+
+### 8. Editar ou excluir uma seleção
 
 Para editar:
 
@@ -105,7 +158,32 @@ Para excluir:
 
 A exclusão remove o grupo e os dados preenchidos nele.
 
-### 7. Gerar PDF ou relatório
+### 9. Salvar e importar progresso
+
+A aplicação salva automaticamente no navegador usando `localStorage`, mas também permite exportar um arquivo de progresso.
+
+Use:
+
+- **Salvar progresso**: baixa um arquivo `.json` com o estado atual do trabalho.
+- **Importar progresso**: restaura um arquivo `.json` salvo anteriormente.
+
+O arquivo de progresso preserva:
+
+- seleções criadas;
+- cores;
+- campos preenchidos;
+- campos personalizados;
+- campos removidos/ocultos;
+- ordem manual dos blocos de seleção;
+- ordem manual das boxes de zonas;
+- título do relatório;
+- tamanho dos rótulos;
+- zoom;
+- posição X e Y do mapa.
+
+Use o arquivo `.json` quando precisar continuar o trabalho em outro navegador, outro computador ou depois de limpar dados locais.
+
+### 10. Gerar PDF ou relatório
 
 Use:
 
@@ -130,12 +208,24 @@ Isso inclui:
 - seleções criadas;
 - cores;
 - campos preenchidos;
-- ordem dos blocos;
+- campos personalizados;
+- campos ocultos/removidos;
+- ordem dos blocos de seleção;
+- ordem das boxes de zonas;
 - título do relatório;
 - tamanho dos rótulos;
 - zoom e posição do mapa.
 
-Atenção: os dados ficam salvos no navegador e no dispositivo usados. Se abrir o arquivo em outro computador ou outro navegador, os dados não vão junto automaticamente. Tecnologia local é assim: fiel, mas caseira.
+Atenção: os dados salvos em `localStorage` ficam no navegador e no dispositivo usados. Se abrir o arquivo em outro computador ou outro navegador, os dados não vão junto automaticamente.
+
+Para transportar o trabalho, use **Salvar progresso** e depois **Importar progresso**.
+
+## Arquivos recomendados no repositório
+
+- `Mapa Interativo - ZONAS ELEITORAIS da Cidade de São Paulo.html`
+- `README.md`
+- `CHANGELOG.md`
+- `LICENSE`
 
 ## Créditos
 
