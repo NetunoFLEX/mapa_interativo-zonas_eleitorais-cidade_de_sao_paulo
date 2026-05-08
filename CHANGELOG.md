@@ -1,74 +1,50 @@
-# Changelog
-
-Todas as mudanças relevantes deste projeto serão documentadas aqui.
-
-Formato inspirado em [Keep a Changelog](https://keepachangelog.com/pt-BR/).
-
-## [v2] - Versão atual
+## [v2.1.0] - Organização avançada, campos dinâmicos e progresso importável
 
 ### Adicionado
 
-- Reordenação manual dos blocos de zonas nas seleções confirmadas por arrastar e soltar.
-- Preservação da ordem personalizada dos blocos na exportação/PDF.
-- Manutenção da ordem crescente das zonas como padrão inicial.
-- Ícone visual de arraste nos títulos das zonas.
-- Área de arraste restrita ao título de cada zona, evitando conflito com campos editáveis.
-- Exclusão de grupos de zonas selecionadas com botão `×`.
-- Confirmação antes de excluir um grupo de zonas.
-- Zoom máximo do mapa ampliado para 400%.
-- Padronização do bloco de observações na exportação:
-  - título em negrito;
-  - texto em peso normal;
-  - mesmo padrão visual dos demais blocos.
-- Créditos atualizados:
-  - mapa-base atribuído a Sailoratlantis, Avrelianvs Magnvs e demais colaboradores do Wikimedia Commons;
-  - adaptação interativa atribuída a netunoflex.
+- Botão **Salvar progresso**, exportando o estado atual da aplicação em arquivo `.json`.
+- Botão **Importar progresso**, permitindo restaurar seleções, campos, ordem dos blocos e enquadramento visual.
+- Salvamento/importação de:
+  - seleções confirmadas;
+  - cores das seleções;
+  - dados preenchidos nas zonas;
+  - campos personalizados;
+  - campos ocultos/removidos;
+  - ordem manual dos blocos de seleção;
+  - ordem manual das boxes de zonas;
+  - título do relatório;
+  - zoom;
+  - eixo X;
+  - eixo Y;
+  - escala dos rótulos.
+- Botão `+` em cada box de zona para adicionar novos campos de texto.
+- Campos personalizados com label editável, valor editável e botão de remoção.
+- Botão `×` para remover/ocultar campos padrão dentro de cada box de zona.
+- Reordenação manual dos blocos de seleção por arrastar e soltar.
+- Alça visual de arraste nos títulos dos blocos de seleção.
+- Painel de ordenação opcional.
+- Ordenação automática opcional de blocos de seleção por título.
+- Ordenação automática opcional de boxes de zonas por:
+  - número da zona;
+  - valor de uma caixa de texto;
+  - direção crescente ou decrescente.
+- Seleção de escopo para ordenar boxes em todas as seleções ou em uma seleção específica.
+- Suporte a ordenação por campos como “votação”, “eleitores”, “votos” ou campos personalizados.
 
 ### Alterado
 
-- Exportação em PDF ajustada para melhorar o encaixe dos blocos logo abaixo do mapa.
-- Exportação configurada em A4 retrato.
-- Blocos de métricas no PDF organizados em grade:
-  - linha superior: votos do candidato e eleitores;
-  - linha inferior: estimativa de votos válidos e eleitores alvo;
-  - observações abaixo, exibidas apenas quando preenchidas.
-- Edição de seleções agora preserva a ordem customizada sempre que possível.
-- Novas zonas adicionadas durante edição entram ao final da seleção, mantendo a ordenação crescente entre elas.
-- Visual dos blocos exportados refinado para leitura mais limpa.
-- Interação dos blocos de zona refinada: a reordenação agora acontece apenas pelo título da zona.
+- Boxes de zonas passaram a funcionar como fichas configuráveis, com campos padrão, campos ocultáveis e campos personalizados.
+- Relatório/exportação passou a renderizar campos dinamicamente, respeitando campos removidos e campos adicionados.
+- Ordem manual dos blocos de seleção passou a ser preservada no painel e no relatório.
+- Ordem manual das boxes de zonas passou a ser preservada no painel e no relatório.
+- A ordenação automática passou a ser complementar, sem substituir o controle manual por arraste.
+- O estado da aplicação passou a ser exportável e importável por JSON, reduzindo dependência exclusiva do `localStorage`.
+- Controles de deslocamento dos eixos X e Y foram ampliados para permitir maior ajuste visual do mapa.
 
 ### Corrigido
 
-- Corrigido o salto de página que fazia os blocos das zonas começarem apenas na página seguinte ao mapa.
-- Corrigido comportamento de exportação para preservar melhor a cor das seleções no mapa.
-- Corrigida a diferença visual do título de observações em relação aos demais títulos de blocos.
-- Corrigido conflito em que selecionar texto nos campos editáveis podia iniciar o arraste do bloco inteiro.
-
-## [v1] - Versão anterior
-
-### Recursos existentes
-
-- Mapa SVG interativo standalone.
-- Seleção de zonas eleitorais por grupo.
-- Escolha de cor por seleção.
-- Painel lateral com seleções confirmadas.
-- Campos editáveis por zona:
-  - votos do candidato;
-  - eleitores;
-  - estimativa de votos válidos;
-  - eleitores alvo;
-  - observações.
-- Título editável do PDF.
-- Exportação para impressão/PDF em A4 retrato.
-- Exportação preservando o enquadramento atual do mapa.
-- Zoom vetorial do mapa.
-- Controle de deslocamento nos eixos X e Y.
-- Salvamento local via `localStorage`.
-
-### Limitações conhecidas
-
-- Blocos das zonas não eram reordenáveis manualmente.
-- Grupos de zonas não tinham botão direto de exclusão com confirmação.
-- Zoom máximo limitado a 300%.
-- Observações no PDF tinham diferença visual em relação aos demais blocos.
-- Quebra de página podia empurrar os blocos para depois do mapa, deixando área branca excessiva.
+- Corrigida a limitação de poder remover campos das boxes sem conseguir adicionar novos campos.
+- Corrigida a ausência de ordenação manual dos blocos principais de seleção.
+- Corrigida a perda de contexto ao recarregar ou transferir trabalho entre sessões, com a introdução de salvar/importar progresso.
+- Corrigida a inconsistência entre campos editados no painel e campos exibidos no relatório.
+- Melhorada a usabilidade para análises em que a ordem narrativa dos blocos é mais importante que a ordem numérica das zonas.
