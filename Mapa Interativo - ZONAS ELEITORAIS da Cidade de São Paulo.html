@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
-  <title>Mapa Interativo das Zonas Eleitorais</title>
+  <title>Mapa Interativo das Zonas Eleitorais de São Paulo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     :root {
@@ -314,6 +314,150 @@
       flex: 0 0 auto;
     }
 
+
+    .field-row-removable {
+      grid-template-columns: minmax(0, 1fr) 28px;
+      align-items: stretch;
+      gap: 6px;
+    }
+
+    .field-row-removable .info-line {
+      margin-bottom: 0;
+    }
+
+    .zone-notes-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 28px;
+      gap: 6px;
+      align-items: stretch;
+      margin-top: 6px;
+    }
+
+    .remove-field-button {
+      width: 26px;
+      min-width: 26px;
+      height: 26px;
+      padding: 0;
+      border-radius: 999px;
+      border: 1px solid #c9c9c9;
+      background: #fff;
+      color: #9f1239;
+      font-size: 16px;
+      font-weight: 950;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      align-self: center;
+    }
+
+    .remove-field-button:hover {
+      background: #ffe4e6;
+      border-color: #fb7185;
+    }
+
+    .selection-actions {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex: 0 0 auto;
+    }
+
+    .mini-action-button {
+      height: 26px;
+      padding: 0 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+
+
+    .selection-block.dragging {
+      opacity: .5;
+      outline: 2px dashed #111;
+      outline-offset: -4px;
+    }
+
+    .selection-block.drag-over {
+      box-shadow: inset 0 4px 0 #111;
+    }
+
+    .selection-drag-title {
+      cursor: grab;
+      user-select: none;
+      display: inline-flex;
+      align-items: center;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .selection-drag-title:active {
+      cursor: grabbing;
+    }
+
+    .sort-panel {
+      margin-top: 10px;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #fafafa;
+    }
+
+    .sort-panel-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .sort-panel-grid .field {
+      margin-bottom: 0;
+    }
+
+    .sort-panel .field label {
+      font-size: 11px;
+    }
+
+    .sort-panel input,
+    .sort-panel select {
+      padding: 7px 8px;
+      font-size: 13px;
+    }
+
+    @media (max-width: 1400px) {
+      .sort-panel-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .add-field-row {
+      margin-top: 8px;
+      display: flex;
+      justify-content: flex-start;
+    }
+
+    .add-field-button {
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      border-radius: 999px;
+      border-color: #111;
+      background: #111;
+      color: #fff;
+      font-size: 18px;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .add-field-button:hover {
+      background: #333;
+      color: #fff;
+    }
+
     .zone-info {
       display: grid;
       grid-template-columns: 34px minmax(0, 1fr);
@@ -497,19 +641,22 @@
 
       <div class="range-control pan-control">
         <strong>X</strong>
-        <input type="range" id="mapPanX" min="-220" max="220" step="2" value="0">
+        <input type="range" id="mapPanX" min="-500" max="500" step="2" value="0">
         <span id="mapPanXValue">0</span>
       </div>
 
       <div class="range-control pan-control">
         <strong>Y</strong>
-        <input type="range" id="mapPanY" min="-220" max="220" step="2" value="0">
+        <input type="range" id="mapPanY" min="-500" max="500" step="2" value="0">
         <span id="mapPanYValue">0</span>
       </div>
 
       <button id="resetView">Resetar visão</button>
       <button id="printReport" class="primary">Gerar impressão</button>
       <button id="exportReportHtml">Exportar HTML do relatório</button>
+      <button id="saveProgress">Salvar progresso</button>
+      <button id="importProgress">Importar progresso</button>
+      <input type="file" id="importProgressFile" accept="application/json,.json" hidden>
       <span class="hint">Clique nas caixinhas acima dos números para selecionar áreas. Confirme a seleção com título para gerar o relatório.</span>
     </header>
 
@@ -989,11 +1136,10 @@
           Ajuste a visão antes de clicar em <strong>Gerar impressão</strong> ou <strong>Exportar HTML do relatório</strong>.
         </p>
 
-        <div class="credit-box">
+        <div class="credit-box" id="mapCredits">
           <strong>Mapa-base:</strong> Sailoratlantis, Avrelianvs Magnvs e demais colaboradores do Wikimedia Commons, licenciado sob CC BY-SA 4.0.<br>
           <strong>Adaptação interativa:</strong> netunoflex
         </div>
-
         <div class="field report-title-field">
           <label for="reportTitleInput">Título editável do PDF</label>
           <input
@@ -1045,7 +1191,51 @@
 
       <section class="card">
         <h2>Seleções confirmadas</h2>
-        <p class="drag-hint">Os blocos das zonas ficam em ordem crescente por padrão. Arraste pelo título da zona para mudar a ordem no painel e na exportação.</p>
+        <div class="buttons">
+          <button id="toggleSortPanel">Painel de ordenação</button>
+        </div>
+        <div class="sort-panel" id="sortPanel" hidden>
+          <div class="sort-panel-grid">
+            <div class="field">
+              <label>O que ordenar</label>
+              <select id="sortTarget">
+                <option value="selections">Blocos de seleção</option>
+                <option value="zones">Boxes de zonas</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Critério</label>
+              <select id="sortCriterion">
+                <option value="manual">Manual, arrastar na mão</option>
+                <option value="title">Título da seleção</option>
+                <option value="zoneNumber">Número da zona</option>
+                <option value="fieldValue">Valor de uma caixa de texto</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Seleção para ordenar boxes</label>
+              <select id="sortSelectionScope">
+                <option value="all">Todas as seleções</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Nome da caixa de texto</label>
+              <input type="text" id="sortFieldLabel" placeholder="Ex.: votação, eleitores, votos">
+            </div>
+            <div class="field">
+              <label>Direção</label>
+              <select id="sortDirection">
+                <option value="asc">Crescente</option>
+                <option value="desc">Decrescente</option>
+              </select>
+            </div>
+          </div>
+          <div class="buttons">
+            <button id="applySortPanel" type="button">Aplicar ordenação</button>
+          </div>
+          <p class="hint">Para ordem manual: arraste os blocos pelo título. Para boxes de zonas, arraste o título da zona. Ordenação automática é opcional, não manda em ninguém.</p>
+        </div>
+        <p class="drag-hint">Os blocos de seleção e os boxes de zonas são ordenáveis na mão. Arraste pelo título. O painel acima serve só para ordenar automaticamente quando fizer sentido.</p>
         <div id="confirmedSelections">
           <p class="hint">Nenhuma seleção confirmada ainda.</p>
         </div>
@@ -1056,7 +1246,7 @@
   <div id="tooltip"></div>
 
   <script>
-    const INITIAL_LABEL_POSITIONS = {
+    let INITIAL_LABEL_POSITIONS = {
   "1": {
     "x": 164.41970825195312,
     "y": 189.92323303222656,
@@ -1349,6 +1539,18 @@
   }
 };
 
+
+    const MAPS = {
+      sao_paulo: {
+        label: "Cidade de São Paulo",
+        defaultTitle: "Mapa Interativo das Zonas Eleitorais da Cidade de São Paulo",
+        creditsHtml: "<strong>Mapa-base:</strong> Sailoratlantis, Avrelianvs Magnvs e demais colaboradores do Wikimedia Commons, licenciado sob CC BY-SA 4.0.<br><strong>Adaptação interativa:</strong> netunoflex",
+        creditsText: "Mapa-base: Sailoratlantis, Avrelianvs Magnvs e demais colaboradores do Wikimedia Commons, licenciado sob CC BY-SA 4.0. Adaptação interativa: netunoflex.",
+        svg: document.getElementById("mapHolder").innerHTML,
+        positions: INITIAL_LABEL_POSITIONS
+      }
+    };
+
     const STORAGE_SELECTIONS = "rumon_mapa_ze_selections_v1";
     const STORAGE_LABEL_SCALE = "rumon_mapa_ze_label_scale_v1";
     const STORAGE_MAP_SCALE = "rumon_mapa_ze_map_scale_v1";
@@ -1367,19 +1569,24 @@
     let mapScale = Number(localStorage.getItem(STORAGE_MAP_SCALE) || "1");
     let mapPanX = Number(localStorage.getItem(STORAGE_MAP_PAN_X) || "0");
     let mapPanY = Number(localStorage.getItem(STORAGE_MAP_PAN_Y) || "0");
+    let activeMapKey = "sao_paulo";
 
     function extractZoneInfo(text) {
       if (!text) return null;
       const clean = text.replace(/\s+/g, " ").trim();
 
-      const match = clean.match(/(\d{1,3})\s*ª?\s*(?:Zona\s+Eleitoral|ZE)?\s*[-–—:]\s*(.+)$/i)
-        || clean.match(/(\d{1,3})\s*ª?\s*Zona\s+Eleitoral\s*(.+)$/i);
+      const match = clean.match(/(\d{1,3})\s*ª?\s*(?:Zona\s+Eleitoral|ZE)?(?:\s*[-–—:]\s*(.+))?$/i)
+        || clean.match(/(\d{1,3})\s*ª?\s*Zona\s+Eleitoral\s*(.*)$/i);
 
       if (!match) return null;
 
+      const number = match[1];
+      const fallbackName = INITIAL_LABEL_POSITIONS[number] ? INITIAL_LABEL_POSITIONS[number].name : "";
+      const name = (match[2] || fallbackName || "").replace(/^[-–—:]\s*/, "").trim();
+
       return {
-        number: match[1],
-        name: (match[2] || "").replace(/^[-–—:]\s*/, "").trim(),
+        number,
+        name,
         full: clean
       };
     }
@@ -1433,16 +1640,20 @@
       tooltip.style.display = "none";
     }
 
+    function storageKeyForMap(baseKey) {
+      return baseKey + "_" + activeMapKey;
+    }
+
     function getSelections() {
       try {
-        return JSON.parse(localStorage.getItem(STORAGE_SELECTIONS) || "[]");
+        return JSON.parse(localStorage.getItem(storageKeyForMap(STORAGE_SELECTIONS)) || "[]");
       } catch (e) {
         return [];
       }
     }
 
     function saveSelections() {
-      localStorage.setItem(STORAGE_SELECTIONS, JSON.stringify(selections, null, 2));
+      localStorage.setItem(storageKeyForMap(STORAGE_SELECTIONS), JSON.stringify(selections, null, 2));
     }
 
     function createLabel(info, point) {
@@ -1665,6 +1876,7 @@
 
       saveSelections();
       renderSelectionSelect();
+      renderSortSelectionScope();
       renderConfirmedSelections();
       clearCurrentSelection();
     }
@@ -1679,6 +1891,8 @@
         option.textContent = sel.title;
         select.appendChild(option);
       });
+
+      renderSortSelectionScope();
     }
 
     function loadSelectionForEdit(id) {
@@ -1711,6 +1925,281 @@
       sel.info[zoneNumber][key] = value;
       saveSelections();
     }
+
+    function getHiddenZoneFields(sel, zoneNumber) {
+      if (!sel.info) sel.info = {};
+      if (!sel.info[zoneNumber]) sel.info[zoneNumber] = {};
+      if (!Array.isArray(sel.info[zoneNumber].hiddenFields)) sel.info[zoneNumber].hiddenFields = [];
+      return sel.info[zoneNumber].hiddenFields;
+    }
+
+    function isZoneFieldHidden(info, fieldKey) {
+      return Array.isArray(info.hiddenFields) && info.hiddenFields.includes(fieldKey);
+    }
+
+    function getZoneCustomFields(sel, zoneNumber) {
+      if (!sel.info) sel.info = {};
+      if (!sel.info[zoneNumber]) sel.info[zoneNumber] = {};
+      if (!Array.isArray(sel.info[zoneNumber].customFields)) sel.info[zoneNumber].customFields = [];
+      return sel.info[zoneNumber].customFields;
+    }
+
+    function addCustomZoneField(selectionId, zoneNumber) {
+      const sel = selections.find(s => s.id === selectionId);
+      if (!sel) return;
+
+      const fields = getZoneCustomFields(sel, zoneNumber);
+      fields.push({
+        id: "custom_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8),
+        label: "NOVO CAMPO:",
+        value: ""
+      });
+
+      saveSelections();
+      renderConfirmedSelections();
+    }
+
+    function updateCustomZoneField(selectionId, zoneNumber, customId, key, value) {
+      const sel = selections.find(s => s.id === selectionId);
+      if (!sel) return;
+
+      const fields = getZoneCustomFields(sel, zoneNumber);
+      const field = fields.find(item => item.id === customId);
+      if (!field) return;
+
+      field[key] = value;
+      saveSelections();
+    }
+
+    function removeZoneField(selectionId, zoneNumber, fieldKey) {
+      const sel = selections.find(s => s.id === selectionId);
+      if (!sel) return;
+
+      if (String(fieldKey).startsWith("custom:")) {
+        const customId = String(fieldKey).slice(7);
+        const fields = getZoneCustomFields(sel, zoneNumber);
+        sel.info[zoneNumber].customFields = fields.filter(item => item.id !== customId);
+      } else {
+        const hidden = getHiddenZoneFields(sel, zoneNumber);
+        if (!hidden.includes(fieldKey)) hidden.push(fieldKey);
+      }
+
+      saveSelections();
+      renderConfirmedSelections();
+    }
+
+    function normalizeSortText(value) {
+      return String(value || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, " ")
+        .trim();
+    }
+
+    function parseSortValue(value) {
+      const raw = String(value || "").trim();
+      const normalized = raw
+        .replace(/\./g, "")
+        .replace(/,/g, ".")
+        .replace(/[^0-9.-]/g, "");
+      const number = Number(normalized);
+      return Number.isFinite(number) && normalized !== "" ? {type: "number", value: number} : {type: "text", value: raw};
+    }
+
+    function compareValues(a, b, direction) {
+      const parsedA = parseSortValue(a);
+      const parsedB = parseSortValue(b);
+      let result = 0;
+
+      if (parsedA.type === "number" && parsedB.type === "number") {
+        result = parsedA.value - parsedB.value;
+      } else {
+        result = String(parsedA.value || "").localeCompare(String(parsedB.value || ""), "pt-BR", {numeric: true, sensitivity: "base"});
+      }
+
+      return direction === "desc" ? result * -1 : result;
+    }
+
+    function getZoneFieldValueByLabel(sel, zoneNumber, labelSearch) {
+      const needle = normalizeSortText(labelSearch);
+      if (!needle) return "";
+
+      const info = (sel.info && sel.info[zoneNumber]) ? sel.info[zoneNumber] : {};
+      const standardFields = [
+        {key: "votosCandidato", labelKey: "votosCandidatoLabel", defaultLabel: "VOTOS [CANDIDATO]:"},
+        {key: "eleitores", labelKey: "eleitoresLabel", defaultLabel: "ELEITORES:"},
+        {key: "votosValidos", labelKey: "votosValidosLabel", defaultLabel: "ESTIMATIVA DE VOTOS VÁLIDOS:"},
+        {key: "eleitoresAlvo", labelKey: "eleitoresAlvoLabel", defaultLabel: "ELEITORES ALVO:"},
+        {key: "notas", labelKey: "notasLabel", defaultLabel: "INFORMAÇÕES ADICIONAIS:"}
+      ];
+
+      for (const field of standardFields) {
+        const label = normalizeSortText(info[field.labelKey] || field.defaultLabel);
+        if (label.includes(needle)) return info[field.key] || "";
+      }
+
+      const customFields = Array.isArray(info.customFields) ? info.customFields : [];
+      for (const field of customFields) {
+        const label = normalizeSortText(field.label || "");
+        if (label.includes(needle)) return field.value || "";
+      }
+
+      return "";
+    }
+
+    function sortZonesInSelection(selectionId, criterion = "zoneNumber", direction = "asc", fieldLabel = "") {
+      const sel = selections.find(s => s.id === selectionId);
+      if (!sel || !Array.isArray(sel.zones)) return;
+
+      if (criterion === "manual") return;
+
+      if (criterion === "fieldValue") {
+        if (!fieldLabel.trim()) {
+          alert("Informe o nome da caixa de texto para ordenar por valor. Ex.: votação.");
+          return;
+        }
+
+        sel.zones = sel.zones.slice().sort((a, b) => {
+          const valueA = getZoneFieldValueByLabel(sel, a, fieldLabel);
+          const valueB = getZoneFieldValueByLabel(sel, b, fieldLabel);
+          const result = compareValues(valueA, valueB, direction);
+          return result || (Number(a) - Number(b));
+        });
+      } else {
+        sel.zones = sel.zones.slice().sort((a, b) => {
+          const result = Number(a) - Number(b);
+          return direction === "desc" ? result * -1 : result;
+        });
+      }
+
+      saveSelections();
+      renderConfirmedSelections();
+    }
+
+    function sortSelectionsByTitle(direction = "asc") {
+      selections = selections.slice().sort((a, b) => {
+        const result = String(a.title || "").localeCompare(String(b.title || ""), "pt-BR", {numeric: true, sensitivity: "base"});
+        return direction === "desc" ? result * -1 : result;
+      });
+      saveSelections();
+      renderSelectionSelect();
+      renderSortSelectionScope();
+      renderConfirmedSelections();
+      refreshZoneColors();
+    }
+
+    function reorderSelection(draggedSelectionId, targetSelectionId) {
+      if (!draggedSelectionId || !targetSelectionId || draggedSelectionId === targetSelectionId) return;
+
+      const dragged = selections.find(s => s.id === draggedSelectionId);
+      if (!dragged) return;
+
+      const next = selections.filter(s => s.id !== draggedSelectionId);
+      const targetIndex = next.findIndex(s => s.id === targetSelectionId);
+      if (targetIndex < 0) return;
+
+      next.splice(targetIndex, 0, dragged);
+      selections = next;
+
+      saveSelections();
+      renderSelectionSelect();
+      renderSortSelectionScope();
+      renderConfirmedSelections();
+      refreshZoneColors();
+    }
+
+    function attachSelectionDragHandlers(block, titleEl, selectionId) {
+      block.dataset.selectionId = selectionId;
+      titleEl.setAttribute("draggable", "true");
+
+      titleEl.addEventListener("dragstart", event => {
+        block.classList.add("dragging");
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("text/plain", JSON.stringify({
+          type: "selection-block",
+          selectionId
+        }));
+      });
+
+      titleEl.addEventListener("dragend", () => {
+        document.querySelectorAll(".selection-block.dragging, .selection-block.drag-over").forEach(el => {
+          el.classList.remove("dragging", "drag-over");
+        });
+      });
+
+      block.addEventListener("dragover", event => {
+        event.preventDefault();
+        block.classList.add("drag-over");
+        event.dataTransfer.dropEffect = "move";
+      });
+
+      block.addEventListener("dragleave", () => {
+        block.classList.remove("drag-over");
+      });
+
+      block.addEventListener("drop", event => {
+        event.preventDefault();
+        block.classList.remove("drag-over");
+
+        let payload = null;
+        try {
+          payload = JSON.parse(event.dataTransfer.getData("text/plain") || "{}");
+        } catch (e) {
+          payload = null;
+        }
+
+        if (!payload || payload.type !== "selection-block") return;
+        reorderSelection(payload.selectionId, selectionId);
+      });
+    }
+
+    function renderSortSelectionScope() {
+      const select = document.getElementById("sortSelectionScope");
+      if (!select) return;
+
+      const currentValue = select.value || "all";
+      select.innerHTML = '<option value="all">Todas as seleções</option>';
+
+      selections.forEach(sel => {
+        const option = document.createElement("option");
+        option.value = sel.id;
+        option.textContent = sel.title;
+        select.appendChild(option);
+      });
+
+      if ([...select.options].some(option => option.value === currentValue)) {
+        select.value = currentValue;
+      }
+    }
+
+    function applySortPanel() {
+      const target = document.getElementById("sortTarget").value;
+      const criterion = document.getElementById("sortCriterion").value;
+      const direction = document.getElementById("sortDirection").value;
+      const fieldLabel = document.getElementById("sortFieldLabel").value;
+      const scope = document.getElementById("sortSelectionScope").value;
+
+      if (criterion === "manual") {
+        alert("Para ordenar manualmente, arraste os blocos pelo título. Esse é o recurso principal, sem firula.");
+        return;
+      }
+
+      if (target === "selections") {
+        if (criterion !== "title") {
+          alert("Blocos de seleção só têm ordenação automática por título. Para o resto, arraste na mão.");
+          return;
+        }
+        sortSelectionsByTitle(direction);
+        return;
+      }
+
+      const targetSelections = scope === "all" ? selections : selections.filter(sel => sel.id === scope);
+      targetSelections.forEach(sel => sortZonesInSelection(sel.id, criterion, direction, fieldLabel));
+      saveSelections();
+      renderConfirmedSelections();
+    }
+
 
     function deleteSelection(selectionId) {
       const sel = selections.find(s => s.id === selectionId);
@@ -1784,7 +2273,7 @@
           payload = null;
         }
 
-        if (!payload || payload.selectionId !== selectionId) return;
+        if (!payload || payload.type === "selection-block" || payload.selectionId !== selectionId) return;
 
         reorderZoneInSelection(selectionId, payload.zoneNumber, zoneNumber);
       });
@@ -1797,6 +2286,7 @@
         item.classList.add("dragging");
         event.dataTransfer.effectAllowed = "move";
         event.dataTransfer.setData("text/plain", JSON.stringify({
+          type: "zone-box",
           selectionId,
           zoneNumber
         }));
@@ -1817,6 +2307,13 @@
         return;
       }
 
+      const zoneFields = [
+        {key: "votosCandidato", labelKey: "votosCandidatoLabel", defaultLabel: "VOTOS [CANDIDATO]:"},
+        {key: "eleitores", labelKey: "eleitoresLabel", defaultLabel: "ELEITORES:"},
+        {key: "votosValidos", labelKey: "votosValidosLabel", defaultLabel: "ESTIMATIVA DE VOTOS VÁLIDOS:"},
+        {key: "eleitoresAlvo", labelKey: "eleitoresAlvoLabel", defaultLabel: "ELEITORES ALVO:"}
+      ];
+
       wrap.innerHTML = "";
 
       selections.forEach(sel => {
@@ -1825,8 +2322,10 @@
 
         const title = document.createElement("div");
         title.className = "selection-title";
-        title.innerHTML = '<span class="small-color" style="background:' + sel.color + '"></span><span class="selection-name">' + escapeHtml(sel.title) + '</span><button type="button" class="delete-selection" title="Excluir grupo" aria-label="Excluir grupo">×</button>';
+        title.innerHTML = '<span class="selection-drag-title" title="Arraste para reordenar este bloco"><span class="drag-grip">☰</span><span class="small-color" style="background:' + sel.color + '"></span><span class="selection-name">' + escapeHtml(sel.title) + '</span></span><div class="selection-actions"><button type="button" class="mini-action-button" data-sort-zones title="Ordenar boxes desta seleção por número da zona">Ordenar boxes</button><button type="button" class="delete-selection" title="Excluir grupo" aria-label="Excluir grupo">×</button></div>';
         title.querySelector(".delete-selection").addEventListener("click", () => deleteSelection(sel.id));
+        title.querySelector("[data-sort-zones]").addEventListener("click", () => sortZonesInSelection(sel.id, "zoneNumber", "asc"));
+        attachSelectionDragHandlers(block, title.querySelector(".selection-drag-title"), sel.id);
         block.appendChild(title);
 
         (sel.zones || []).forEach(number => {
@@ -1843,27 +2342,44 @@
 
           const form = document.createElement("div");
           form.className = "zone-form";
+
+          const visibleFieldHtml = zoneFields
+            .filter(field => !isZoneFieldHidden(info, field.key))
+            .map(field => `
+              <div class="field-row-removable">
+                <div class="info-line editable-label-line">
+                  <input type="text" value="${escapeAttr(info[field.labelKey] || field.defaultLabel)}" data-k="${field.labelKey}" class="label-input">
+                  <input type="text" value="${escapeAttr(info[field.key] || "")}" data-k="${field.key}">
+                </div>
+                <button type="button" class="remove-field-button" data-remove-field="${field.key}" title="Remover campo" aria-label="Remover campo">×</button>
+              </div>
+            `).join("");
+
+          const customFieldHtml = getZoneCustomFields(sel, number)
+            .map(field => `
+              <div class="field-row-removable">
+                <div class="info-line editable-label-line">
+                  <input type="text" value="${escapeAttr(field.label || "NOVO CAMPO:")}" data-custom-id="${escapeAttr(field.id)}" data-custom-k="label" class="label-input">
+                  <input type="text" value="${escapeAttr(field.value || "")}" data-custom-id="${escapeAttr(field.id)}" data-custom-k="value">
+                </div>
+                <button type="button" class="remove-field-button" data-remove-field="custom:${escapeAttr(field.id)}" title="Remover campo" aria-label="Remover campo">×</button>
+              </div>
+            `).join("");
+
+          const notesHtml = isZoneFieldHidden(info, "notas") ? "" : `
+            <div class="zone-notes-row">
+              <div class="zone-notes">
+                <textarea placeholder="Informações adicionais..." data-k="notas">${escapeHtml(info.notas || "")}</textarea>
+              </div>
+              <button type="button" class="remove-field-button" data-remove-field="notas" title="Remover observações" aria-label="Remover observações">×</button>
+            </div>
+          `;
+
           form.innerHTML = `
             <h3><span class="zone-drag-title" title="Arraste pelo título para reordenar"><span class="drag-grip">☰</span>${number}ª Zona Eleitoral - ${escapeHtml(z.name)}</span></h3>
-            <div class="info-line editable-label-line">
-              <input type="text" value="${escapeAttr(info.votosCandidatoLabel || "VOTOS [CANDIDATO]:")}" data-k="votosCandidatoLabel" class="label-input">
-              <input type="text" value="${escapeAttr(info.votosCandidato || "")}" data-k="votosCandidato">
-            </div>
-            <div class="info-line editable-label-line">
-              <input type="text" value="${escapeAttr(info.eleitoresLabel || "ELEITORES:")}" data-k="eleitoresLabel" class="label-input">
-              <input type="text" value="${escapeAttr(info.eleitores || "")}" data-k="eleitores">
-            </div>
-            <div class="info-line editable-label-line">
-              <input type="text" value="${escapeAttr(info.votosValidosLabel || "ESTIMATIVA DE VOTOS VÁLIDOS:")}" data-k="votosValidosLabel" class="label-input">
-              <input type="text" value="${escapeAttr(info.votosValidos || "")}" data-k="votosValidos">
-            </div>
-            <div class="info-line editable-label-line">
-              <input type="text" value="${escapeAttr(info.eleitoresAlvoLabel || "ELEITORES ALVO:")}" data-k="eleitoresAlvoLabel" class="label-input">
-              <input type="text" value="${escapeAttr(info.eleitoresAlvo || "")}" data-k="eleitoresAlvo">
-            </div>
-            <div class="zone-notes">
-              <textarea placeholder="Informações adicionais..." data-k="notas">${escapeHtml(info.notas || "")}</textarea>
-            </div>
+            ${(visibleFieldHtml || customFieldHtml) ? visibleFieldHtml + customFieldHtml : '<p class="hint">Todos os campos deste box foram removidos.</p>'}
+            ${notesHtml}
+            <div class="add-field-row"><button type="button" class="add-field-button" data-add-field title="Adicionar caixa de texto" aria-label="Adicionar caixa de texto">+</button></div>
           `;
 
           const dragTitle = form.querySelector(".zone-drag-title");
@@ -1871,9 +2387,26 @@
             attachZoneTitleDragHandlers(dragTitle, item, sel.id, number);
           }
 
-          form.querySelectorAll("input, textarea").forEach(input => {
+          form.querySelectorAll("input[data-k], textarea[data-k]").forEach(input => {
             input.addEventListener("input", () => {
               updateZoneInfo(sel.id, number, input.dataset.k, input.value);
+            });
+          });
+
+          form.querySelectorAll("input[data-custom-id]").forEach(input => {
+            input.addEventListener("input", () => {
+              updateCustomZoneField(sel.id, number, input.dataset.customId, input.dataset.customK, input.value);
+            });
+          });
+
+          const addButton = form.querySelector("[data-add-field]");
+          if (addButton) {
+            addButton.addEventListener("click", () => addCustomZoneField(sel.id, number));
+          }
+
+          form.querySelectorAll(".remove-field-button").forEach(button => {
+            button.addEventListener("click", () => {
+              removeZoneField(sel.id, number, button.dataset.removeField);
             });
           });
 
@@ -1892,7 +2425,7 @@
       selections = [];
       currentSelected.clear();
       editingSelectionId = "";
-      localStorage.removeItem(STORAGE_SELECTIONS);
+      localStorage.removeItem(storageKeyForMap(STORAGE_SELECTIONS));
 
       document.getElementById("selectionTitle").value = "";
       document.getElementById("editSelectionSelect").value = "";
@@ -2042,7 +2575,8 @@
     function getReportTitle() {
       const input = document.getElementById("reportTitleInput");
       const title = input ? input.value.trim() : "";
-      return title || "Mapa Interativo das Zonas Eleitorais da Cidade de São Paulo";
+      const map = MAPS[activeMapKey] || MAPS.sao_paulo;
+      return title || map.defaultTitle;
     }
 
     function buildReportHtml() {
@@ -2071,36 +2605,45 @@
       const confirmed = selections || [];
       const generatedAt = new Date().toLocaleString("pt-BR");
       const reportTitle = getReportTitle();
+      const zoneFields = [
+        {key: "votosCandidato", labelKey: "votosCandidatoLabel", defaultLabel: "VOTOS [CANDIDATO]:"},
+        {key: "eleitores", labelKey: "eleitoresLabel", defaultLabel: "ELEITORES:"},
+        {key: "votosValidos", labelKey: "votosValidosLabel", defaultLabel: "ESTIMATIVA DE VOTOS VÁLIDOS:"},
+        {key: "eleitoresAlvo", labelKey: "eleitoresAlvoLabel", defaultLabel: "ELEITORES ALVO:"}
+      ];
 
       const selectionSections = confirmed.map((sel, index) => {
         const zones = (sel.zones || []).map(number => {
           const z = zoneInfo[number] || {name: ""};
           const info = (sel.info && sel.info[number]) ? sel.info[number] : {};
+          const defaultMetrics = zoneFields
+            .filter(field => !isZoneFieldHidden(info, field.key))
+            .map(field => `
+                  <div class="metric-card">
+                    <div class="metric-label">${escapeHtml(info[field.labelKey] || field.defaultLabel)}</div>
+                    <div class="metric-value">${escapeHtml(info[field.key] || "________________")}</div>
+                  </div>
+            `).join("");
+          const customMetrics = Array.isArray(info.customFields)
+            ? info.customFields.map(field => `
+                  <div class="metric-card">
+                    <div class="metric-label">${escapeHtml(field.label || "NOVO CAMPO:")}</div>
+                    <div class="metric-value">${escapeHtml(field.value || "________________")}</div>
+                  </div>
+            `).join("")
+            : "";
+          const metrics = defaultMetrics + customMetrics;
+          const notes = (!isZoneFieldHidden(info, "notas") && info.notas)
+            ? `<div class="notes-card"><strong>OBSERVAÇÕES:</strong><br>${escapeHtml(info.notas)}</div>`
+            : "";
 
           return `
             <div class="zone-row">
               <div class="color-slab" style="background:${sel.color}"></div>
               <div class="zone-copy">
-                <h3><span class="zone-drag-title" title="Arraste pelo título para reordenar"><span class="drag-grip">☰</span>${number}ª Zona Eleitoral - ${escapeHtml(z.name)}</span></h3>
-                <div class="metric-grid">
-                  <div class="metric-card">
-                    <div class="metric-label">${escapeHtml(info.votosCandidatoLabel || "VOTOS [CANDIDATO]:")}</div>
-                    <div class="metric-value">${escapeHtml(info.votosCandidato || "________________")}</div>
-                  </div>
-                  <div class="metric-card">
-                    <div class="metric-label">${escapeHtml(info.eleitoresLabel || "ELEITORES:")}</div>
-                    <div class="metric-value">${escapeHtml(info.eleitores || "________________")}</div>
-                  </div>
-                  <div class="metric-card">
-                    <div class="metric-label">${escapeHtml(info.votosValidosLabel || "ESTIMATIVA DE VOTOS VÁLIDOS:")}</div>
-                    <div class="metric-value">${escapeHtml(info.votosValidos || "________________")}</div>
-                  </div>
-                  <div class="metric-card">
-                    <div class="metric-label">${escapeHtml(info.eleitoresAlvoLabel || "ELEITORES ALVO:")}</div>
-                    <div class="metric-value">${escapeHtml(info.eleitoresAlvo || "________________")}</div>
-                  </div>
-                </div>
-                ${info.notas ? `<div class="notes-card"><strong>OBSERVAÇÕES:</strong><br>${escapeHtml(info.notas)}</div>` : ""}
+                <h3>${number}ª Zona Eleitoral - ${escapeHtml(z.name)}</h3>
+                ${metrics ? `<div class="metric-grid">${metrics}</div>` : `<p class="muted">Sem campos ativos neste box.</p>`}
+                ${notes}
               </div>
             </div>
           `;
@@ -2171,162 +2714,138 @@
 
     .map-print {
       width: 100%;
-      height: 98mm;
-      border: 1px solid #cfcfcf;
       display: flex;
       align-items: center;
       justify-content: center;
+      margin-bottom: 5mm;
+      border: 1px solid #ddd;
+      padding: 2mm;
+      min-height: 112mm;
+      max-height: 148mm;
       overflow: hidden;
-      margin-bottom: 3mm;
       page-break-inside: avoid;
       break-inside: avoid;
-      background: #fff;
     }
 
     .map-print svg {
-      width: 100% !important;
-      height: 100% !important;
+      width: 100%;
+      height: auto;
+      max-height: 144mm;
       display: block;
     }
 
-    .map-print svg text {
-      paint-order: stroke;
-      stroke: rgba(255,255,255,.72);
-      stroke-width: .55px;
-      stroke-linejoin: round;
-    }
-
     .selection-section {
+      margin: 0 0 5mm 0;
       page-break-inside: auto;
       break-inside: auto;
-      margin-bottom: 4mm;
-      border: 0;
-      border-radius: 4px;
-      overflow: visible;
     }
 
     .selection-head {
       display: flex;
       align-items: center;
-      gap: 6px;
-      padding: 5px 7px;
-      border: 1px solid #cfcfcf;
-      background: #f3f3f3;
-      break-after: avoid;
-      page-break-after: avoid;
+      gap: 7px;
+      border-bottom: 1.5px solid #111;
+      padding-bottom: 3px;
+      margin-bottom: 3mm;
     }
 
     .selection-color {
-      width: 15px;
-      height: 15px;
-      border: 1px solid rgba(0,0,0,.3);
-      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 1px solid #111;
+      border-radius: 3px;
       flex: 0 0 auto;
     }
 
     .selection-head h2 {
       margin: 0;
-      font-size: 12px;
-      line-height: 1.1;
+      font-size: 14px;
       font-weight: 950;
       text-transform: uppercase;
     }
 
     .zone-grid {
-      display: block;
-      border-left: 1px solid #cfcfcf;
-      border-right: 1px solid #cfcfcf;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3mm;
     }
 
     .zone-row {
-      min-height: 33mm;
       display: grid;
-      grid-template-columns: 10mm minmax(0, 1fr);
-      border-bottom: 1px solid #e4e4e4;
+      grid-template-columns: 7px minmax(0, 1fr);
+      border: 1px solid #d4d4d4;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fff;
+      min-height: 24mm;
       break-inside: avoid;
       page-break-inside: avoid;
-    }
-
-    .zone-row:last-child {
-      border-bottom: 0;
     }
 
     .color-slab {
       width: 100%;
       height: 100%;
-      min-height: 33mm;
     }
 
     .zone-copy {
-      padding: 5px 7px;
-      font-family: Arial, Helvetica, sans-serif;
+      padding: 6px 7px;
     }
 
     .zone-copy h3 {
-      margin: 0 0 4px 0;
-      font-size: 10.5px;
-      line-height: 1.15;
+      margin: 0 0 5px 0;
+      font-size: 11px;
       font-weight: 950;
-      text-transform: uppercase;
-      font-family: Arial, Helvetica, sans-serif;
     }
 
     .metric-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 3px;
+      gap: 4px;
     }
 
     .metric-card {
-      border: 1px solid #d7d7d7;
-      border-radius: 4px;
-      padding: 3px 4px;
-      background: #fafafa;
-      min-height: 9.5mm;
-      font-family: Arial, Helvetica, sans-serif;
+      border: 1px solid #e1e1e1;
+      border-radius: 6px;
+      padding: 4px 5px;
+      min-height: 12mm;
     }
 
     .metric-label {
-      font-size: 7.4px;
+      font-size: 7.5px;
       line-height: 1.1;
       font-weight: 950;
+      color: #555;
       text-transform: uppercase;
       margin-bottom: 2px;
-      font-family: Arial, Helvetica, sans-serif;
     }
 
     .metric-value {
-      font-size: 9.3px;
+      font-size: 10px;
       line-height: 1.15;
-      font-weight: 700;
-      font-family: Arial, Helvetica, sans-serif;
+      font-weight: 800;
+      word-break: break-word;
     }
 
     .notes-card {
-      margin-top: 3px;
-      border: 1px solid #d7d7d7;
-      border-radius: 4px;
-      padding: 3px 4px;
-      background: #fff;
-      font-size: 9.3px;
-      line-height: 1.15;
-      font-family: Arial, Helvetica, sans-serif;
-      font-weight: 400;
+      margin-top: 4px;
+      border: 1px solid #e1e1e1;
+      border-radius: 6px;
+      padding: 4px 5px;
+      font-size: 8.5px;
+      line-height: 1.25;
+      white-space: pre-wrap;
     }
 
-    .notes-card strong {
-      display: block;
-      font-size: 7.4px;
-      line-height: 1.1;
-      font-weight: 950;
-      text-transform: uppercase;
-      margin-bottom: 2px;
-      font-family: Arial, Helvetica, sans-serif;
+    .muted {
+      color: #777;
+      font-size: 9px;
+      margin: 4px 0 0 0;
     }
 
     .empty-state {
-      border: 1px solid #ddd;
-      padding: 18px;
+      border: 1px dashed #aaa;
+      border-radius: 10px;
+      padding: 12px;
       text-align: center;
       color: #555;
     }
@@ -2334,13 +2853,12 @@
     .actions {
       position: sticky;
       top: 0;
-      z-index: 10;
       background: #fff;
       border-bottom: 1px solid #ddd;
       padding: 8px;
       margin-bottom: 8px;
-      display: flex;
-      gap: 8px;
+      text-align: center;
+      z-index: 9;
     }
 
     .actions button {
@@ -2351,21 +2869,6 @@
       padding: 8px 12px;
       font-weight: 800;
       cursor: pointer;
-    }
-
-    @media screen {
-      body {
-        background: #f1f1f1;
-      }
-
-      .report {
-        width: 210mm;
-        min-height: 297mm;
-        margin: 10px auto;
-        padding: 0;
-        background: #fff;
-        box-shadow: 0 12px 36px rgba(0,0,0,.16);
-      }
     }
 
     @media print {
@@ -2392,6 +2895,7 @@
       .zone-row {
         break-inside: avoid;
         page-break-inside: avoid;
+        margin-bottom: 3mm;
       }
     }
   </style>
@@ -2405,7 +2909,7 @@
     <h1 class="report-title">${escapeHtml(reportTitle)}</h1>
     <div class="meta">
       Gerado em ${generatedAt}. O mapa preserva o zoom, o eixo X e o eixo Y ativos no momento da exportação.<br>
-      Mapa-base: Sailoratlantis, Avrelianvs Magnvs e demais colaboradores do Wikimedia Commons, licenciado sob CC BY-SA 4.0. Adaptação interativa: netunoflex.
+      ${(MAPS[activeMapKey] || MAPS.sao_paulo).creditsText || ""}
     </div>
     <section class="map-print">${svgMarkup}</section>
     ${confirmed.length ? selectionSections : emptyState}
@@ -2445,13 +2949,148 @@ function openPrintReport() {
       URL.revokeObjectURL(url);
     }
 
+    function buildProgressPayload() {
+      const reportTitleInput = document.getElementById("reportTitleInput");
+      return {
+        version: 1,
+        savedAt: new Date().toISOString(),
+        reportTitle: reportTitleInput ? reportTitleInput.value : "",
+        selections,
+        view: {
+          labelScale,
+          mapScale,
+          mapPanX,
+          mapPanY
+        }
+      };
+    }
 
+    function saveProgressFile() {
+      saveSelections();
+
+      const payload = buildProgressPayload();
+      const blob = new Blob([JSON.stringify(payload, null, 2)], {type: "application/json;charset=utf-8"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+
+      a.href = url;
+      a.download = "progresso_mapa_eleitoral_sp_" + stamp + ".json";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      URL.revokeObjectURL(url);
+    }
+
+    function applyImportedProgress(payload) {
+      if (!payload || !Array.isArray(payload.selections)) {
+        alert("Arquivo inválido. Use um JSON de progresso exportado por este mapa.");
+        return;
+      }
+      selections = payload.selections;
+      saveSelections();
+
+      if (payload.view) {
+        if (payload.view.labelScale) labelScale = Number(payload.view.labelScale) || labelScale;
+        if (payload.view.mapScale) mapScale = Number(payload.view.mapScale) || mapScale;
+        if (payload.view.mapPanX !== undefined) mapPanX = Number(payload.view.mapPanX) || 0;
+        if (payload.view.mapPanY !== undefined) mapPanY = Number(payload.view.mapPanY) || 0;
+      }
+
+      if (payload.reportTitle !== undefined) {
+        localStorage.setItem(STORAGE_REPORT_TITLE + "_" + activeMapKey, String(payload.reportTitle || ""));
+      }
+
+      currentSelected.clear();
+      editingSelectionId = "";
+      document.getElementById("selectionTitle").value = "";
+      document.getElementById("editSelectionSelect").value = "";
+
+      loadActiveMapSvg();
+      initMap();
+      const reportTitleInput = document.getElementById("reportTitleInput");
+      if (reportTitleInput && payload.reportTitle !== undefined) reportTitleInput.value = String(payload.reportTitle || "");
+
+      document.getElementById("labelScale").value = String(labelScale);
+      document.getElementById("mapScale").value = String(mapScale);
+      document.getElementById("mapPanX").value = String(mapPanX);
+      document.getElementById("mapPanY").value = String(mapPanY);
+
+      updateLabelScale(labelScale);
+      applyMapView();
+      renderSelectionSelect();
+      renderCurrentSelected();
+      renderConfirmedSelections();
+      updateCheckboxes();
+      refreshZoneColors();
+
+      alert("Progresso importado com sucesso.");
+    }
+
+    function importProgressFile(file) {
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          applyImportedProgress(JSON.parse(reader.result));
+        } catch (e) {
+          alert("Não foi possível ler o arquivo de progresso. Verifique se é um JSON válido.");
+        }
+      };
+      reader.readAsText(file, "utf-8");
+    }
+
+
+
+
+    function clearObject(obj) {
+      Object.keys(obj).forEach(key => delete obj[key]);
+    }
+
+    function cleanActiveMapSvg(svg) {
+      if (!svg) return;
+    }
+
+    function updateMapCredits() {
+      const map = MAPS[activeMapKey] || MAPS.sao_paulo;
+      const box = document.getElementById("mapCredits");
+      if (box) box.innerHTML = map.creditsHtml || "";
+    }
+
+    function loadActiveMapSvg() {
+      const map = MAPS[activeMapKey] || MAPS.sao_paulo;
+      const holder = document.getElementById("mapHolder");
+
+      INITIAL_LABEL_POSITIONS = map.positions;
+      holder.innerHTML = map.svg;
+
+      clearObject(labelGroups);
+      clearObject(zoneTargets);
+      clearObject(zoneInfo);
+
+      currentSelected = new Set();
+      editingSelectionId = "";
+      updateMapCredits();
+
+      const titleInput = document.getElementById("reportTitleInput");
+      if (titleInput && !localStorage.getItem(STORAGE_REPORT_TITLE + "_" + activeMapKey)) {
+        titleInput.value = map.defaultTitle;
+      }
+    }
     function initMap() {
+      clearObject(labelGroups);
+      clearObject(zoneTargets);
+      clearObject(zoneInfo);
+
       const svg = document.querySelector("#mapHolder svg");
       if (!svg) {
         alert("Não encontrei um SVG dentro do HTML.");
         return;
       }
+
+      cleanActiveMapSvg(svg);
 
       svg.removeAttribute("width");
       svg.removeAttribute("height");
@@ -2534,19 +3173,25 @@ function openPrintReport() {
       mapPanXInput.addEventListener("input", event => updateMapPanX(event.target.value));
       mapPanYInput.addEventListener("input", event => updateMapPanY(event.target.value));
       document.getElementById("resetView").addEventListener("click", resetMapView);
-
       const reportTitleInput = document.getElementById("reportTitleInput");
       if (reportTitleInput) {
-        const savedReportTitle = localStorage.getItem(STORAGE_REPORT_TITLE);
+        const savedReportTitle = localStorage.getItem(STORAGE_REPORT_TITLE + "_" + activeMapKey);
         if (savedReportTitle) reportTitleInput.value = savedReportTitle;
+        else reportTitleInput.value = (MAPS[activeMapKey] || MAPS.sao_paulo).defaultTitle;
 
         reportTitleInput.addEventListener("input", () => {
-          localStorage.setItem(STORAGE_REPORT_TITLE, reportTitleInput.value);
+          localStorage.setItem(STORAGE_REPORT_TITLE + "_" + activeMapKey, reportTitleInput.value);
         });
       }
 
       document.getElementById("printReport").addEventListener("click", openPrintReport);
       document.getElementById("exportReportHtml").addEventListener("click", exportReportHtml);
+      document.getElementById("saveProgress").addEventListener("click", saveProgressFile);
+      document.getElementById("importProgress").addEventListener("click", () => document.getElementById("importProgressFile").click());
+      document.getElementById("importProgressFile").addEventListener("change", event => {
+        importProgressFile(event.target.files && event.target.files[0]);
+        event.target.value = "";
+      });
 
       document.getElementById("selectionColor").addEventListener("input", () => {
         updateCheckboxes();
@@ -2556,6 +3201,18 @@ function openPrintReport() {
       document.getElementById("confirmSelection").addEventListener("click", confirmSelection);
       document.getElementById("clearCurrent").addEventListener("click", clearCurrentSelection);
       document.getElementById("resetSelections").addEventListener("click", resetSelections);
+      const toggleSortPanel = document.getElementById("toggleSortPanel");
+      const sortPanel = document.getElementById("sortPanel");
+      if (toggleSortPanel && sortPanel) {
+        toggleSortPanel.addEventListener("click", () => {
+          sortPanel.hidden = !sortPanel.hidden;
+        });
+      }
+
+      const applySortButton = document.getElementById("applySortPanel");
+      if (applySortButton) {
+        applySortButton.addEventListener("click", applySortPanel);
+      }
 
       document.getElementById("editSelectionSelect").addEventListener("change", event => {
         loadSelectionForEdit(event.target.value);
@@ -2565,6 +3222,7 @@ function openPrintReport() {
     window.addEventListener("DOMContentLoaded", () => {
       selections = getSelections();
       initControls();
+      loadActiveMapSvg();
       initMap();
       renderSelectionSelect();
       renderConfirmedSelections();
