@@ -140,8 +140,6 @@ Critérios disponíveis:
 - valor de uma caixa de texto, como “votação”, “eleitores”, “votos” ou qualquer campo personalizado;
 - ordem crescente ou decrescente.
 
-A ordenação automática é complementar. Para narrativa estratégica, a ordem manual geralmente é melhor. Algoritmo nenhum entende prioridade política sem contexto, no máximo finge com convicção.
-
 ### 8. Editar ou excluir uma seleção
 
 Para editar:
